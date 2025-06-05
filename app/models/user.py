@@ -1,0 +1,29 @@
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+from .base import BaseModel
+
+class User(AbstractUser, BaseModel):
+    class Role(models.TextChoices):
+        ADMIN = 'ADMIN', 'Admin'
+        USER = 'USER', 'User'
+
+    role = models.CharField(
+        max_length=10,
+        choices=Role.choices,
+        default=Role.USER
+    )
+    email = models.EmailField(unique=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    def is_admin(self):
+        return self.role == self.Role.ADMIN
+
+    def is_user(self):
+        return self.role == self.Role.USER
+
+    class Meta:
+        db_table = 'users'
+        verbose_name = 'User'
+        verbose_name_plural = 'Users' 
