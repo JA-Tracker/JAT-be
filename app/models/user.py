@@ -17,6 +17,12 @@ class User(AbstractUser, BaseModel):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+    def save(self, *args, **kwargs):
+        # Automatically set superusers to have ADMIN role
+        if self.is_superuser and self.role != self.Role.ADMIN:
+            self.role = self.Role.ADMIN
+        super().save(*args, **kwargs)
+
     def is_admin(self):
         return self.role == self.Role.ADMIN
 
