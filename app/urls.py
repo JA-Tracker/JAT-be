@@ -36,5 +36,5 @@ urlpatterns = [
         , name='user-admin-delete-user'),
     
     # Admin Monitoring
-    path('monitoring/', MonitoringView.as_view(), name='monitoring'),
+    path('admin/monitoring/', MonitoringView.as_view(), name='monitoring'),
 ] 
