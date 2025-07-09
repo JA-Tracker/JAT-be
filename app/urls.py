@@ -1,21 +1,21 @@
 from django.urls import path
-from .views.auth import register, login, logout
-from .views.profile import get_profile, create_profile, update_profile
+from .views.auth import LoginAPIView, RegisterAPIView, LogoutAPIView
+from .views.profile import GetProfileAPIView, CreateProfileAPIView, UpdateProfileAPIView
 from .views.admin import UserAdminViewSet, MonitoringView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 # The API URLs
 urlpatterns = [
     # Authentication URLs
-    path('register/', register, name='register'),
-    path('login/', login, name='login'),
+    path('register/', RegisterAPIView.as_view(), name='register'),
+    path('login/', LoginAPIView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('logout/', logout, name='logout'),
+    path('logout/', LogoutAPIView.as_view(), name='logout'),
     
     # Profile URLs
-    path('profile/', get_profile, name='get_profile'),
-    path('profile/create/', create_profile, name='create_profile'),
-    path('profile/update/', update_profile, name='update_profile'),
+    path('profile/', GetProfileAPIView.as_view(), name='get_profile'),
+    path('profile/create/', CreateProfileAPIView.as_view(), name='create_profile'),
+    path('profile/update/', UpdateProfileAPIView.as_view(), name='update_profile'),
     
     # Admin URLs
     path('admin/users/', UserAdminViewSet.as_view({

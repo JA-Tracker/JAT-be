@@ -1,74 +1,91 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from django.contrib.auth import authenticate
 from ..models import User
 from ..serializers import UserSerializer, UserCreateSerializer
+from ..utils.api import BaseAPIView, APIResponse
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login(request):
-    email = request.data.get('email')
-    password = request.data.get('password')
+class AuthenticationAPIView(BaseAPIView):
+    """Base class for authentication related views"""
+    permission_classes = [AllowAny]
 
-    if not email or not password:
-        return Response({
-            'error': 'Please provide both email and password'
-        }, status=status.HTTP_400_BAD_REQUEST)
+class LoginAPIView(AuthenticationAPIView):
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
 
-    user = authenticate(email=email, password=password)
+        if not email or not password:
+            return APIResponse.error(
+                message="Please provide both email and password",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
 
-    if not user:
-        return Response({
-            'error': 'Invalid credentials'
-        }, status=status.HTTP_401_UNAUTHORIZED)
+        user = authenticate(email=email, password=password)
 
-    refresh = RefreshToken.for_user(user)
+        if not user:
+            return APIResponse.error(
+                message="Invalid credentials",
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
 
-    return Response({
-        'user': UserSerializer(user).data,
-        'tokens': {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }
-    }, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def register(request):
-    serializer = UserCreateSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
         refresh = RefreshToken.for_user(user)
-        return Response({
-            'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def logout(request):
-    try:
-        refresh_token = request.data.get('refresh')
-        if not refresh_token:
-            return Response({
-                'error': 'Refresh token is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-            
-        token = RefreshToken(refresh_token)
-        token.blacklist()
+        return APIResponse.success(
+            data={
+                'user': UserSerializer(user).data,
+                'tokens': {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                }
+            },
+            status_code=status.HTTP_200_OK
+        )
+
+class RegisterAPIView(AuthenticationAPIView):
+    def post(self, request):
+        serializer_result = self.validate_serializer(UserCreateSerializer, request.data)
         
-        return Response({
-            'success': 'User logged out successfully'
-        }, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_400_BAD_REQUEST) 
+        if isinstance(serializer_result, UserCreateSerializer):
+            user = serializer_result.save()
+            refresh = RefreshToken.for_user(user)
+            
+            return APIResponse.success(
+                data={
+                    'user': UserSerializer(user).data,
+                    'tokens': {
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                    }
+                },
+                status_code=status.HTTP_201_CREATED
+            )
+        else:
+            # If validation failed, serializer_result is already an error response
+            return serializer_result
+
+class LogoutAPIView(BaseAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return APIResponse.error(
+                    message="Refresh token is required",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+                
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
+            return APIResponse.success(
+                message="User logged out successfully",
+                status_code=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return APIResponse.error(
+                message=str(e),
+                status_code=status.HTTP_400_BAD_REQUEST
+            ) 

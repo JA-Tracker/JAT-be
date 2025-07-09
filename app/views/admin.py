@@ -1,14 +1,13 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.views import APIView
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
 from ..models import User, Profile
 from ..serializers import UserSerializer
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from ..utils.api import BaseAPIView, APIResponse
 
 class UserAdminViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -27,26 +26,34 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         role = request.data.get('role')
         if role not in ['ADMIN', 'USER']:
-            return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse.error(
+                message="Invalid role",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
         user.role = role
         user.save()
-        return Response({'status': 'role set', 'role': user.role})
+        return APIResponse.success(
+            data={'role': user.role},
+            message="Role set successfully"
+        )
 
     @action(detail=True, methods=['delete'])
     def delete_user(self, request, pk=None):
         user = self.get_object()
         user.delete()
-        return Response({'status': 'user deleted'})
+        return APIResponse.success(message="User deleted successfully")
 
 # Monitoring actions can be implemented here as needed
-class MonitoringView(APIView):
+class MonitoringView(BaseAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # Check if user is admin
         if not request.user.is_admin():
-            return Response({"error": "You do not have permission to access this resource"}, 
-                           status=status.HTTP_403_FORBIDDEN)
+            return APIResponse.error(
+                message="You do not have permission to access this resource",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
         
         # Get time ranges
         now = timezone.now()
@@ -104,7 +111,7 @@ class MonitoringView(APIView):
             ~Q(bio='') | ~Q(location='') | ~Q(birth_date__isnull=True) | ~Q(avatar='')
         ).count()
         
-        return Response({
+        data = {
             'user_stats': {
                 'total_users': total_users,
                 'active_users': active_users,
@@ -128,4 +135,6 @@ class MonitoringView(APIView):
                 'completed_profiles': profiles_complete,
                 'completion_rate': round((profiles_complete / profiles_count * 100) if profiles_count > 0 else 0, 2)
             }
-        }) 
+        }
+        
+        return APIResponse.success(data=data) 
