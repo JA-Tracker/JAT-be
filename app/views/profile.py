@@ -5,11 +5,11 @@ from ..serializers import ProfileSerializer
 from ..utils.api import BaseAPIView, APIResponse
 
 class ProfileAPIView(BaseAPIView):
-    """Base class for profile related views"""
+    """Profile API View - handles all profile CRUD operations"""
     permission_classes = [IsAuthenticated]
-
-class GetProfileAPIView(ProfileAPIView):
+    
     def get(self, request):
+        """GET /profile/ - Get user's profile"""
         try:
             profile = request.user.profile
             serializer = ProfileSerializer(profile)
@@ -19,9 +19,9 @@ class GetProfileAPIView(ProfileAPIView):
                 message="Profile not found. Please create a profile first.",
                 status_code=status.HTTP_404_NOT_FOUND
             )
-
-class CreateProfileAPIView(ProfileAPIView):
+    
     def post(self, request):
+        """POST /profile/ - Create new profile"""
         try:
             # Check if profile already exists
             if hasattr(request.user, 'profile'):
@@ -39,7 +39,6 @@ class CreateProfileAPIView(ProfileAPIView):
                     status_code=status.HTTP_201_CREATED
                 )
             else:
-                # If validation failed, serializer_result is already an error response
                 return serializer_result
                 
         except Exception as e:
@@ -47,9 +46,9 @@ class CreateProfileAPIView(ProfileAPIView):
                 message=str(e),
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-
-class UpdateProfileAPIView(ProfileAPIView):
+    
     def put(self, request):
+        """PUT /profile/ - Update user's profile"""
         try:
             profile = request.user.profile
             serializer_result = self.validate_serializer(
@@ -63,7 +62,6 @@ class UpdateProfileAPIView(ProfileAPIView):
                 updated_profile = serializer_result.save()
                 return APIResponse.success(data=ProfileSerializer(updated_profile).data)
             else:
-                # If validation failed, serializer_result is already an error response
                 return serializer_result
                 
         except Profile.DoesNotExist:
