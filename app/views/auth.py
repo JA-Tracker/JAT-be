@@ -11,6 +11,28 @@ class AuthenticationAPIView(BaseAPIView):
     """Base class for authentication related views"""
     permission_classes = [AllowAny]
 
+class RegisterAPIView(AuthenticationAPIView):
+    def post(self, request):
+        serializer_result = self.validate_serializer(UserCreateSerializer, request.data)
+        
+        if isinstance(serializer_result, UserCreateSerializer):
+            user = serializer_result.save()
+            refresh = RefreshToken.for_user(user)
+            
+            return APIResponse.success(
+                data={
+                    'user': UserSerializer(user).data,
+                    'tokens': {
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                    }
+                },
+                status_code=status.HTTP_201_CREATED
+            )
+        else:
+            # If validation failed, serializer_result is already an error response
+            return serializer_result
+
 class LoginAPIView(AuthenticationAPIView):
     def post(self, request):
         email = request.data.get('email')
@@ -43,27 +65,6 @@ class LoginAPIView(AuthenticationAPIView):
             status_code=status.HTTP_200_OK
         )
 
-class RegisterAPIView(AuthenticationAPIView):
-    def post(self, request):
-        serializer_result = self.validate_serializer(UserCreateSerializer, request.data)
-        
-        if isinstance(serializer_result, UserCreateSerializer):
-            user = serializer_result.save()
-            refresh = RefreshToken.for_user(user)
-            
-            return APIResponse.success(
-                data={
-                    'user': UserSerializer(user).data,
-                    'tokens': {
-                        'refresh': str(refresh),
-                        'access': str(refresh.access_token),
-                    }
-                },
-                status_code=status.HTTP_201_CREATED
-            )
-        else:
-            # If validation failed, serializer_result is already an error response
-            return serializer_result
 
 class LogoutAPIView(BaseAPIView):
     permission_classes = [IsAuthenticated]
