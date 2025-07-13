@@ -9,15 +9,13 @@ class ProfileSerializer(serializers.ModelSerializer):
         response["id"] = instance.id
         response["username"] = instance.user.username if instance.user else None
         response["email"] = instance.user.email if instance.user else None
-        response["bio"] = instance.bio
-        response["location"] = instance.location
+        response["first_name"] = instance.first_name
+        response["middle_name"] = instance.middle_name
+        response["last_name"] = instance.last_name
         response["birth_date"] = instance.birth_date
-        response["avatar"] = instance.avatar.url if instance.avatar else None
-        response["created_at"] = instance.created_at
-        response["updated_at"] = instance.updated_at
-        return response
-
+        
+        return response 
+    
     class Meta:
         model = Profile
-        fields = ('id', 'username', 'email', 'bio', 'location', 'birth_date', 'avatar', 'created_at', 'updated_at')
-        read_only_fields = fields 
+        fields = ('first_name', 'middle_name', 'last_name', 'birth_date')

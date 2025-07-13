@@ -10,14 +10,9 @@ class UserSerializer(serializers.ModelSerializer):
         response["username"] = instance.username
         response["email"] = instance.email
         response["role"] = instance.role
-        response["created_at"] = instance.created_at
-        response["updated_at"] = instance.updated_at
+        response["created_at"] = instance.date_joined
+        response["updated_at"] = instance.last_login
         return response
-
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'role', 'created_at', 'updated_at')
-        read_only_fields = fields
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

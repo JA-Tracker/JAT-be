@@ -1,8 +1,7 @@
 from django.db import models
-from .base import BaseModel
 from .user import User
 
-class Application(BaseModel):
+class Application(models.Model):
     class Status(models.TextChoices):
         APPLIED = 'Applied', 'Applied'
         INTERVIEW = 'Interview', 'Interview'
@@ -32,16 +31,6 @@ class Application(BaseModel):
         choices=JobType.choices,
         default=JobType.FULL_TIME
     )
-    notes = models.TextField(blank=True)
-    job_url = models.URLField(blank=True)
-    contact_person = models.CharField(max_length=200, blank=True)
-    contact_email = models.EmailField(blank=True)
-
-    class Meta:
-        db_table = 'applications'
-        verbose_name = 'Application'
-        verbose_name_plural = 'Applications'
-        ordering = ['-applied_date']
 
     def __str__(self):
         return f"{self.position} at {self.company}" 

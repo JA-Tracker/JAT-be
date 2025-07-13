@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from ..models import Application
-from ..serializers import ApplicationSerializer, ApplicationCreateSerializer, ApplicationUpdateSerializer
+from ..serializers import ApplicationSerializer, ApplicationCreateUpdateSerializer
 from ..utils.api import BaseAPIView, APIResponse
 
 class ApplicationAPIView(BaseAPIView):
@@ -29,31 +29,33 @@ class ApplicationAPIView(BaseAPIView):
         """POST /applications/ - Create new application"""
         try:
             serializer_result = self.validate_serializer(
-                ApplicationCreateSerializer, 
+                ApplicationCreateUpdateSerializer, 
                 request.data,
                 context={'request': request}
             )
             
-            if isinstance(serializer_result, ApplicationCreateSerializer):
+            if isinstance(serializer_result, ApplicationCreateUpdateSerializer):
                 application = serializer_result.save()
                 response_serializer = ApplicationSerializer(application)
                 return APIResponse.success(data=response_serializer.data, status_code=status.HTTP_201_CREATED)
             else:
                 return serializer_result
         except Exception as e:
-            return APIResponse.error(message="Failed to create application")
+            # Print the real error to the console for debugging
+            print("Create application error:", e)
+            return APIResponse.error(message=f"Failed to create application: {e}")
     
     def put(self, request, application_id):
         """PUT /applications/{id}/ - Update specific application"""
         try:
             application = get_object_or_404(Application, id=application_id, user=request.user)
             serializer_result = self.validate_serializer(
-                ApplicationUpdateSerializer,
+                ApplicationCreateUpdateSerializer,
                 request.data,
                 instance=application
             )
             
-            if isinstance(serializer_result, ApplicationUpdateSerializer):
+            if isinstance(serializer_result, ApplicationCreateUpdateSerializer):
                 updated_application = serializer_result.save()
                 response_serializer = ApplicationSerializer(updated_application)
                 return APIResponse.success(data=response_serializer.data)

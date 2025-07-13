@@ -1,8 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from .base import BaseModel
 
-class User(AbstractUser, BaseModel):
+class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = 'ADMIN', 'Admin'
         USER = 'USER', 'User'
@@ -27,9 +26,4 @@ class User(AbstractUser, BaseModel):
         return self.role == self.Role.ADMIN
 
     def is_user(self):
-        return self.role == self.Role.USER
-
-    class Meta:
-        db_table = 'users'
-        verbose_name = 'User'
-        verbose_name_plural = 'Users' 
+        return self.role == self.Role.USER 

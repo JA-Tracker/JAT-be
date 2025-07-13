@@ -51,14 +51,14 @@ class BaseAPIView(APIView):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
-    def validate_serializer(self, serializer_class, data, instance=None, partial=False):
+    def validate_serializer(self, serializer_class, data, instance=None, partial=False, **kwargs):
         """
         Validate serializer data and return serializer or error response
         """
         if instance:
-            serializer = serializer_class(instance, data=data, partial=partial)
+            serializer = serializer_class(instance, data=data, partial=partial, **kwargs)
         else:
-            serializer = serializer_class(data=data)
+            serializer = serializer_class(data=data, **kwargs)
             
         if not serializer.is_valid():
             return APIResponse.error(
