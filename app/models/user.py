@@ -26,4 +26,7 @@ class User(AbstractUser):
         return self.role == self.Role.ADMIN
 
     def is_user(self):
-        return self.role == self.Role.USER 
+        return self.role == self.Role.USER
+
+    class Meta:
+        db_table = 'user'

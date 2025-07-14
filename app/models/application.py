@@ -34,3 +34,6 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.position} at {self.company}" 
+
+    class Meta:
+        db_table = 'application'

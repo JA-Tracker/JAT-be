@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from ..models import Profile
-from ..serializers import ProfileSerializer
+from ..serializers import ProfileSerializer, ProfileCreateUpdateSerializer
 from ..utils.api import BaseAPIView, APIResponse
 
 class ProfileAPIView(BaseAPIView):
@@ -30,12 +30,12 @@ class ProfileAPIView(BaseAPIView):
                     status_code=status.HTTP_400_BAD_REQUEST
                 )
 
-            serializer_result = self.validate_serializer(ProfileSerializer, request.data)
+            serializer_result = self.validate_serializer(ProfileCreateUpdateSerializer, request.data)
             
-            if isinstance(serializer_result, ProfileSerializer):
-                profile = serializer_result.save(user=request.user)
+            if isinstance(serializer_result, ProfileCreateUpdateSerializer):
+                profile = serializer_result.save()
                 return APIResponse.success(
-                    data=ProfileSerializer(profile).data,
+                    data=ProfileCreateUpdateSerializer(profile).data,
                     status_code=status.HTTP_201_CREATED
                 )
             else:
@@ -52,15 +52,15 @@ class ProfileAPIView(BaseAPIView):
         try:
             profile = request.user.profile
             serializer_result = self.validate_serializer(
-                ProfileSerializer, 
+                ProfileCreateUpdateSerializer, 
                 request.data, 
                 instance=profile, 
                 partial=True
             )
             
-            if isinstance(serializer_result, ProfileSerializer):
+            if isinstance(serializer_result, ProfileCreateUpdateSerializer):
                 updated_profile = serializer_result.save()
-                return APIResponse.success(data=ProfileSerializer(updated_profile).data)
+                return APIResponse.success(data=ProfileCreateUpdateSerializer(updated_profile).data)
             else:
                 return serializer_result
                 
