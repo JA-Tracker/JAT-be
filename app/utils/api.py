@@ -55,11 +55,13 @@ class BaseAPIView(APIView):
         """
         Validate serializer data and return serializer or error response
         """
+        context = kwargs.pop('context', {})
+        context['request'] = self.request
         if instance:
-            serializer = serializer_class(instance, data=data, partial=partial, **kwargs)
+            serializer = serializer_class(instance, data=data, partial=partial, context=context, **kwargs)
         else:
-            serializer = serializer_class(data=data, **kwargs)
-            
+            serializer = serializer_class(data=data, context=context, **kwargs)
+        
         if not serializer.is_valid():
             return APIResponse.error(
                 message="Validation error",
