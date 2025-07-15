@@ -2,6 +2,8 @@ from django.urls import path
 from .views.auth import LoginAPIView, RegisterAPIView, LogoutAPIView
 from .views.profile import ProfileAPIView
 from .views.application import ApplicationAPIView
+from .views.application import ApplicationStatsAPIView
+from .views.application import ApplicationAnalyticsAPIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 # The API URLs
@@ -18,4 +20,6 @@ urlpatterns = [
     # Application URLs
     path('applications/', ApplicationAPIView.as_view(), name='applications'),
     path('applications/<int:application_id>/', ApplicationAPIView.as_view(), name='application-detail'),
+    path('applications/stats/', ApplicationStatsAPIView.as_view(), name='application-stats'),
+    path('applications/analytics/', ApplicationAnalyticsAPIView.as_view(), name='application-analytics'),
 ] 

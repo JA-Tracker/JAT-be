@@ -1,9 +1,14 @@
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from datetime import date
+from collections import Counter
+from django.db.models import Avg
+
 from ..models import Application
-from ..serializers import ApplicationSerializer, ApplicationCreateUpdateSerializer
+from ..serializers import ApplicationSerializer, ApplicationCreateUpdateSerializer, ApplicationStatsSerializer, ApplicationAnalyticsSerializer
 from ..utils.api import BaseAPIView, APIResponse
+from rest_framework import serializers
 
 class ApplicationAPIView(BaseAPIView):
     permission_classes = [IsAuthenticated]
@@ -72,3 +77,83 @@ class ApplicationAPIView(BaseAPIView):
             return APIResponse.success(message="Application deleted successfully")
         except Exception as e:
             return APIResponse.error(message="Failed to delete application")
+        
+
+class ApplicationStatsAPIView(BaseAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        applications = Application.objects.filter(user=user)
+        total = applications.count()
+        interviews = applications.filter(status=Application.Status.INTERVIEW).count()
+        accepted = applications.filter(status=Application.Status.ACCEPTED).count()
+        rejected = applications.filter(status=Application.Status.REJECTED).count()
+        # Upcoming interviews: status=INTERVIEW and interview_date >= today
+        today = date.today()
+        upcoming_qs = applications.filter(status=Application.Status.INTERVIEW, interview_date__gte=today).order_by('interview_date')
+        upcoming = [
+            {
+                'company': app.company,
+                'position': app.position,
+                'interview_date': app.interview_date.strftime('%Y-%m-%d') if app.interview_date else None
+            }
+            for app in upcoming_qs
+        ]
+        data = {
+            'total_applications': total,
+            'interviews_scheduled': interviews,
+            'accepted_applications': accepted,
+            'rejected_applications': rejected,
+            'upcoming_interviews': upcoming,
+        }
+        serializer = ApplicationStatsSerializer(data)
+        return APIResponse.success(data=serializer.data)     
+
+
+class ApplicationAnalyticsAPIView(BaseAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """GET /applications/analytics/ - Analytics for applications"""
+        user = request.user
+        applications = Application.objects.filter(user=user)
+        total = applications.count() or 1  # avoid division by zero
+
+        # Get all possible choices from the model
+        status_choices = [choice[0] for choice in Application.Status.choices]
+        job_type_choices = [choice[0] for choice in Application.JobType.choices]
+
+        # Status counts and percentages
+        status_counter = Counter(applications.values_list('status', flat=True))
+        status_counts = {
+            status: {
+                "count": status_counter.get(status, 0),
+                "percent": round(100 * status_counter.get(status, 0) / total, 2)
+            }
+            for status in status_choices
+        }
+
+        # Job type counts and percentages
+        job_type_counter = Counter(applications.values_list('job_type', flat=True))
+        job_type_counts = {
+            job_type: {
+                "count": job_type_counter.get(job_type, 0),
+                "percent": round(100 * job_type_counter.get(job_type, 0) / total, 2)
+            }
+            for job_type in job_type_choices
+        }
+
+        # Average salary by job type
+        avg_salary_by_job_type = {}
+        for job_type in job_type_choices:
+            avg_salary = applications.filter(job_type=job_type, salary__isnull=False).aggregate(avg=Avg('salary'))['avg']
+            avg_salary_by_job_type[job_type] = round(avg_salary or 0, 2)
+
+        data = {
+            "status_counts": status_counts,
+            "job_type_counts": job_type_counts,
+            "avg_salary_by_job_type": avg_salary_by_job_type,
+        }
+        serializer = ApplicationAnalyticsSerializer(data)
+        return APIResponse.success(data=serializer.data)

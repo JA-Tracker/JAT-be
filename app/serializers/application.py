@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from ..models import Application
+from collections import Counter, defaultdict
+from django.db.models import Avg
 
 class ApplicationSerializer(serializers.ModelSerializer):
     """Application Display Serializer with explicit output structure"""
@@ -32,4 +34,20 @@ class ApplicationCreateUpdateSerializer(serializers.ModelSerializer):
         # Set the user from the request
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data) 
+
+class ApplicationStatsSerializer(serializers.Serializer):
+    total_applications = serializers.IntegerField()
+    interviews_scheduled = serializers.IntegerField()
+    accepted_applications = serializers.IntegerField()
+    rejected_applications = serializers.IntegerField()
+    upcoming_interviews = serializers.ListField(child=serializers.DictField()) 
+
+class CountPercentSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    percent = serializers.FloatField()
+
+class ApplicationAnalyticsSerializer(serializers.Serializer):
+    status_counts = serializers.DictField(child=CountPercentSerializer())
+    job_type_counts = serializers.DictField(child=CountPercentSerializer())
+    avg_salary_by_job_type = serializers.DictField(child=serializers.FloatField()) 
         
