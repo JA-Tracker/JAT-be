@@ -2,9 +2,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from ..models import Profile
 from ..serializers import ProfileSerializer, ProfileCreateUpdateSerializer
-from ..utils.api import BaseAPIView, APIResponse
+from ..mixins import ObjectManager, APIResponse
+from ..mixins.audit import AuditMixin
 
-class ProfileAPIView(BaseAPIView):
+class ProfileAPIView(ObjectManager, AuditMixin):
     """Profile API View - handles all profile CRUD operations"""
     permission_classes = [IsAuthenticated]
     

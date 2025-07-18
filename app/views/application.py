@@ -7,10 +7,11 @@ from django.db.models import Avg
 
 from ..models import Application
 from ..serializers import ApplicationSerializer, ApplicationCreateUpdateSerializer, ApplicationStatsSerializer, ApplicationAnalyticsSerializer
-from ..utils.api import BaseAPIView, APIResponse
-from rest_framework import serializers
+from ..mixins import ObjectManager, APIResponse
+from ..mixins.audit import AuditMixin
 
-class ApplicationAPIView(BaseAPIView):
+
+class ApplicationAPIView(ObjectManager, AuditMixin):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, application_id=None):
@@ -79,7 +80,7 @@ class ApplicationAPIView(BaseAPIView):
             return APIResponse.error(message="Failed to delete application")
         
 
-class ApplicationStatsAPIView(BaseAPIView):
+class ApplicationStatsAPIView(ObjectManager, AuditMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -111,7 +112,7 @@ class ApplicationStatsAPIView(BaseAPIView):
         return APIResponse.success(data=serializer.data)     
 
 
-class ApplicationAnalyticsAPIView(BaseAPIView):
+class ApplicationAnalyticsAPIView(ObjectManager, AuditMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

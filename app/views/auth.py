@@ -5,9 +5,9 @@ from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, Ou
 from django.contrib.auth import authenticate
 from ..models import User
 from ..serializers import UserSerializer, UserCreateSerializer
-from ..utils.api import BaseAPIView, APIResponse
+from ..mixins import ObjectManager, APIResponse, AuditMixin
 
-class AuthenticationAPIView(BaseAPIView):
+class AuthenticationAPIView(ObjectManager, AuditMixin):
     """Base class for authentication related views"""
     permission_classes = [AllowAny]
 
@@ -66,7 +66,7 @@ class LoginAPIView(AuthenticationAPIView):
         )
 
 
-class LogoutAPIView(BaseAPIView):
+class LogoutAPIView(ObjectManager, AuditMixin):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
