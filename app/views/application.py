@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from datetime import date
 from collections import Counter
 from django.db.models import Avg
+from ..utils.pagination import CustomPageNumberPagination
 
 from ..models import Application
 from ..serializers import ApplicationSerializer, ApplicationCreateUpdateSerializer, ApplicationStatsSerializer, ApplicationAnalyticsSerializer
@@ -15,7 +16,7 @@ class ApplicationAPIView(ObjectManager, AuditMixin):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, application_id=None):
-        """GET /applications/ - List all applications
+        """GET /applications/ - List all applications with pagination and search
            GET /applications/{id}/ - Get specific application"""
         try:
             if application_id:
@@ -24,10 +25,28 @@ class ApplicationAPIView(ObjectManager, AuditMixin):
                 serializer = ApplicationSerializer(application)
                 return APIResponse.success(data=serializer.data)
             else:
-                # Get all applications for user
+                # Get all applications for user, with search and pagination
                 applications = Application.objects.filter(user=request.user)
-                serializer = ApplicationSerializer(applications, many=True)
-                return APIResponse.success(data=serializer.data)
+                search_query = request.GET.get('search')
+                if search_query:
+                    from django.db.models import Q
+                    applications = applications.filter(
+                        Q(company__icontains=search_query) | Q(position__icontains=search_query)
+                    )
+                    
+                # Pagination
+                paginator = CustomPageNumberPagination()
+                page = paginator.paginate_queryset(applications, request)
+                serializer = ApplicationSerializer(page, many=True)
+                return APIResponse.success(data={
+                    'results': serializer.data,
+                    'pagination': {
+                        'page': paginator.page.number,
+                        'page_size': paginator.page.paginator.per_page,
+                        'total': paginator.page.paginator.count,
+                        'total_pages': paginator.page.paginator.num_pages,
+                    }
+                })
         except Exception as e:
             return APIResponse.error(message="Failed to fetch applications")
     
