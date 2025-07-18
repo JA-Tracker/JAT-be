@@ -31,8 +31,15 @@ class ApplicationAPIView(ObjectManager, AuditMixin):
                 if search_query:
                     from django.db.models import Q
                     applications = applications.filter(
-                        Q(company__icontains=search_query) | Q(position__icontains=search_query)
+                        Q(company__icontains=search_query)
                     )
+                # Date range filtering
+                applied_date_after = request.GET.get('applied_date_after')
+                applied_date_before = request.GET.get('applied_date_before')
+                if applied_date_after:
+                    applications = applications.filter(applied_date__gte=applied_date_after)
+                if applied_date_before:
+                    applications = applications.filter(applied_date__lte=applied_date_before)
                     
                 # Pagination
                 paginator = CustomPageNumberPagination()
