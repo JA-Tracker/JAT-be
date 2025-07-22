@@ -9,6 +9,7 @@ from ..mixins import ObjectManager, APIResponse, AuditMixin
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 class AuthenticationAPIView(ObjectManager, AuditMixin):
     """Base class for authentication related views"""
@@ -170,3 +171,9 @@ class CookieTokenRefreshView(TokenRefreshView):
                 message="Invalid token",
                 status_code=status.HTTP_401_UNAUTHORIZED
             ) 
+
+class AuthCheckAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({'detail': 'Authenticated'}, status=status.HTTP_200_OK) 
