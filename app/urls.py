@@ -1,5 +1,5 @@
 from django.urls import path
-from .views.auth import LoginAPIView, RegisterAPIView, LogoutAPIView
+from .views.auth import LoginAPIView, RegisterAPIView, LogoutAPIView, CookieTokenRefreshView
 from .views.profile import ProfileAPIView
 from .views.application import ApplicationAPIView
 from .views.application import ApplicationStatsAPIView
@@ -9,14 +9,13 @@ from .views.admin import (
     admin_audit_logs, admin_dashboard,
     admin_user_profile, admin_user_applications, admin_application_detail
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 # The API URLs
 urlpatterns = [
     # Authentication URLs
     path('register/', RegisterAPIView.as_view(), name='register'),
     path('login/', LoginAPIView.as_view(), name='login'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/refresh/', CookieTokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     
     # Profile URLs
