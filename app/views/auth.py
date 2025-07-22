@@ -18,16 +18,33 @@ class RegisterAPIView(AuthenticationAPIView):
         if isinstance(serializer_result, UserCreateSerializer):
             user = serializer_result.save()
             refresh = RefreshToken.for_user(user)
-            
+            access = refresh.access_token
+            cookies = [
+                {
+                    'key': 'refresh',
+                    'value': str(refresh),
+                    'httponly': True,
+                    'secure': True,
+                    'samesite': 'None',
+                },
+                {
+                    'key': 'access',
+                    'value': str(access),
+                    'httponly': True,
+                    'secure': True,
+                    'samesite': 'None',
+                }
+            ]
             return APIResponse.success(
                 data={
                     'user': UserSerializer(user).data,
                     'tokens': {
                         'refresh': str(refresh),
-                        'access': str(refresh.access_token),
+                        'access': str(access),
                     }
                 },
-                status_code=status.HTTP_201_CREATED
+                status_code=status.HTTP_201_CREATED,
+                cookies=cookies
             )
         else:
             # If validation failed, serializer_result is already an error response
@@ -53,16 +70,33 @@ class LoginAPIView(AuthenticationAPIView):
             )
 
         refresh = RefreshToken.for_user(user)
-
+        access = refresh.access_token
+        cookies = [
+            {
+                'key': 'refresh',
+                'value': str(refresh),
+                'httponly': True,
+                'secure': True,
+                'samesite': 'None',
+            },
+            {
+                'key': 'access',
+                'value': str(access),
+                'httponly': True,
+                'secure': True,
+                'samesite': 'None',
+            }
+        ]
         return APIResponse.success(
             data={
                 'user': UserSerializer(user).data,
                 'tokens': {
                     'refresh': str(refresh),
-                    'access': str(refresh.access_token),
+                    'access': str(access),
                 }
             },
-            status_code=status.HTTP_200_OK
+            status_code=status.HTTP_200_OK,
+            cookies=cookies
         )
 
 
@@ -80,10 +114,29 @@ class LogoutAPIView(ObjectManager, AuditMixin):
                 
             token = RefreshToken(refresh_token)
             token.blacklist()
-            
+            # Clear cookies by setting them to empty and expired
+            cookies = [
+                {
+                    'key': 'refresh',
+                    'value': '',
+                    'httponly': True,
+                    'secure': True,
+                    'samesite': 'None',
+                    'expires': 0,
+                },
+                {
+                    'key': 'access',
+                    'value': '',
+                    'httponly': True,
+                    'secure': True,
+                    'samesite': 'None',
+                    'expires': 0,
+                }
+            ]
             return APIResponse.success(
                 message="User logged out successfully",
-                status_code=status.HTTP_200_OK
+                status_code=status.HTTP_200_OK,
+                cookies=cookies
             )
         except Exception as e:
             return APIResponse.error(
